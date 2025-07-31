@@ -1,0 +1,43 @@
+version: '3.9'
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "4100:4100"
+    environment:
+      - API_ROOT=http://localhost:3000/api
+    command: npm start
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongo/realworld
+      - JWT_SECRET=secret
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:5
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  tests:
+    build:
+      context: ./realworld-smoke-tests
+    depends_on:
+      - frontend
+      - backend
+    environment:
+      - BASE_URL=http://frontend:4100/#/
+      - BASE_API_URL=http://backend:3000/api
+    command: pytest -m "ui or api" -v
+
+volumes:
+  mongo_data:
